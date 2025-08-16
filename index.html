@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 1px;
+            border-bottom: 1px solid #333;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: 1px solid #333;
+            border-bottom: none;
+            margin-right: -1px;
+            background: #111;
+        }
+        .tab.active {
+            background: #000;
+            border-bottom: 1px solid #000;
+            margin-bottom: -1px;
+        }
+        .content {
+            display: none;
+            padding: 20px 0;
+        }
+        .content.active {
+            display: block;
+        }
+        textarea {
+            background-color: #000;
+            color: #fff;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 8px 0;
+            width: 100%;
+            max-width: 800px;
+            min-height: 100px;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            background-color: #000;
+            color: #fff;
+            border: 1px solid #333;
+            padding: 10px 24px;
+            margin: 12px 5px 12px 0;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #111;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 12px;
+            border: 1px solid #333;
+            background: #111;
+            word-break: break-all;
+            max-width: 800px;
+            min-height: 50px;
+            white-space: pre-wrap;
+        }
+        h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .explanation {
+            border-top: 1px solid #333;
+            padding-top: 15px;
+            margin-top: 20px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        .tool-link {
+            color: #4af;
+            text-decoration: none;
+            border-bottom: 1px dashed #4af;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('encrypt')">加密</div>
+        <div class="tab" onclick="switchTab('decrypt')">解密</div>
+        <div class="tab" onclick="switchTab('converter')">转换器</div>
+        <div class="tab" onclick="switchTab('how')">原理</div>
+    </div>
+
+    <div id="encrypt" class="content active">
+        <h3>信息加密</h3>
+        <textarea id="masterKey" placeholder="输入主密钥"></textarea>
+        <textarea id="plaintext" placeholder="输入明文（你想加密的信息）"></textarea>
+        <div>
+            <button onclick="encrypt()">执行加密</button>
+            <button onclick="sendToDecrypt()">发送到解密</button>
+        </div>
+        <div id="encryptResult" class="result"></div>
+    </div>
+
+    <div id="decrypt" class="content">
+        <h3>信息解密</h3>
+        <textarea id="decryptKey" placeholder="输入主密钥"></textarea>
+        <textarea id="ciphertext" placeholder="输入加密信息（你想要解密的信息）"></textarea>
+        <div>
+            <button onclick="decrypt()">执行解密</button>
+            <button onclick="sendToConverter()">发送到转换器</button>
+        </div>
+        <div id="decryptResult" class="result"></div>
+    </div>
+
+    <div id="converter" class="content">
+        <h3>BA二进制英文转换器</h3>
+        <textarea id="inputText" placeholder="输入英文文本或二进制(8位每组，空格分隔)"></textarea>
+        <div>
+            <button onclick="textToBinary()">文本 → 二进制</button>
+            <button onclick="binaryToText()">二进制 → 文本</button>
+            <button onclick="clearAll()">清空</button>
+            <button onclick="sendToEncrypt()">发送到加密</button>
+        </div>
+        <div id="converterResult" class="result"></div>
+        
+        <div class="explanation">
+            <h4>使用说明:</h4>
+            <ul>
+                <li>支持字母(A-Z,a-z)、数字(0-9)和基本符号(空格,逗号,句号,问号,感叹号)</li>
+                <li>二进制格式: 8位一组，用空格分隔 (例如: 01001000 01101001)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="how" class="content">
+        <h3>BA二进制加密解密器</h3>
+        <p><strong>核心安全机制:</strong></p>
+        <ul>
+            <li>动态密钥: 每次加密生成随机干扰值(Salt)</li>
+            <li>密钥保护: 临时密钥 = 主密钥 ⊕ Salt</li>
+            <li>安全传输: 加密结果 = Salt + 加密数据</li>
+            <li>格式保留: 自动处理二进制空格，保持8位一组</li>
+        </ul>
+
+        <div class="explanation">
+            <p><strong>完整工作流程示例:</strong></p>
+            <ol>
+                <li>在<a class="tool-link" onclick="switchTab('converter')">转换器</a>中输入"Hello" → 转换为"01001000 01100101 01101100 01101100 01101111"</li>
+                <li>在<a class="tool-link" onclick="switchTab('encrypt')">加密</a>页面，设置主密钥如"101010"，粘贴上述二进制</li>
+                <li>加密后得到类似"11010010101 101101010..."的结果</li>
+                <li>接收方在<a class="tool-link" onclick="switchTab('decrypt')">解密</a>页面用相同主密钥解密</li>
+                <li>将解密后的二进制粘贴回<a class="tool-link" onclick="switchTab('converter')">转换器</a>还原为原文</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Encryption/Decryption functions
+        function xor(a, b) {
+            let result = '';
+            const len = Math.min(a.length, b.length);
+            for (let i = 0; i < len; i++) {
+                result += (a[i] === b[i]) ? '0' : '1';
+            }
+            return result;
+        }
+
+        function generateSalt(length) {
+            let salt = '';
+            for (let i = 0; i < length; i++) {
+                salt += Math.random() > 0.5 ? '1' : '0';
+            }
+            return salt;
+        }
+
+        function expandToLength(str, length) {
+            if (str.length >= length) return str.substring(0, length);
+            let expanded = str;
+            while (expanded.length < length) {
+                expanded += str;
+            }
+            return expanded.substring(0, length);
+        }
+
+        function formatBinaryWithSpaces(binaryStr) {
+            // Format binary in 8-bit groups with spaces
+            return binaryStr.replace(/([01]{8})/g, '$1 ').trim();
+        }
+
+        function encrypt() {
+            const masterKey = document.getElementById('masterKey').value.replace(/[^01]/g, '');
+            const plaintext = document.getElementById('plaintext').value.replace(/[^01]/g, '');
+            
+            if (!masterKey || !plaintext) {
+                alert('请输入有效的二进制主密钥和明文');
+                return;
+            }
+
+            const salt = generateSalt(3);
+            const expandedSalt = expandToLength(salt, masterKey.length);
+            const tempKey = xor(masterKey, expandedSalt);
+            
+            // Process in chunks to handle large binary
+            let ciphertext = '';
+            for (let i = 0; i < plaintext.length; i += masterKey.length) {
+                const chunk = plaintext.substr(i, masterKey.length);
+                ciphertext += xor(chunk, expandToLength(tempKey, chunk.length));
+            }
+            
+            const finalOutput = salt + ciphertext;
+            document.getElementById('encryptResult').textContent = formatBinaryWithSpaces(finalOutput);
+        }
+
+        function decrypt() {
+            const masterKey = document.getElementById('decryptKey').value.replace(/[^01]/g, '');
+            let ciphertext = document.getElementById('ciphertext').value.replace(/[^01]/g, '');
+            
+            if (!masterKey || !ciphertext || ciphertext.length < 3) {
+                alert('请输入有效的二进制密钥和加密信息(至少3位)');
+                return;
+            }
+
+            const salt = ciphertext.substring(0, 3);
+            const actualCipher = ciphertext.substring(3);
+            const expandedSalt = expandToLength(salt, masterKey.length);
+            const tempKey = xor(masterKey, expandedSalt);
+            
+            // Process in chunks to handle large binary
+            let plaintext = '';
+            for (let i = 0; i < actualCipher.length; i += masterKey.length) {
+                const chunk = actualCipher.substr(i, masterKey.length);
+                plaintext += xor(chunk, expandToLength(tempKey, chunk.length));
+            }
+            
+            document.getElementById('decryptResult').textContent = formatBinaryWithSpaces(plaintext);
+        }
+
+        // Converter functions
+        const charToBinary = {
+            ' ': '00100000', '!': '00100001', ',': '00101100', '.': '00101110',
+            '?': '00111111', '0': '00110000', '1': '00110001', '2': '00110010',
+            '3': '00110011', '4': '00110100', '5': '00110101', '6': '00110110',
+            '7': '00110111', '8': '00111000', '9': '00111001', 'A': '01000001',
+            'B': '01000010', 'C': '01000011', 'D': '01000100', 'E': '01000101',
+            'F': '01000110', 'G': '01000111', 'H': '01001000', 'I': '01001001',
+            'J': '01001010', 'K': '01001011', 'L': '01001100', 'M': '01001101',
+            'N': '01001110', 'O': '01001111', 'P': '01010000', 'Q': '01010001',
+            'R': '01010010', 'S': '01010011', 'T': '01010100', 'U': '01010101',
+            'V': '01010110', 'W': '01010111', 'X': '01011000', 'Y': '01011001',
+            'Z': '01011010', 'a': '01100001', 'b': '01100010', 'c': '01100011',
+            'd': '01100100', 'e': '01100101', 'f': '01100110', 'g': '01100111',
+            'h': '01101000', 'i': '01101001', 'j': '01101010', 'k': '01101011',
+            'l': '01101100', 'm': '01101101', 'n': '01101110', 'o': '01101111',
+            'p': '01110000', 'q': '01110001', 'r': '01110010', 's': '01110011',
+            't': '01110100', 'u': '01110101', 'v': '01110110', 'w': '01110111',
+            'x': '01111000', 'y': '01111001', 'z': '01111010'
+        };
+
+        const binaryToChar = {};
+        for (const [char, binary] of Object.entries(charToBinary)) {
+            binaryToChar[binary] = char;
+        }
+
+        function textToBinary() {
+            const input = document.getElementById('inputText').value;
+            let output = '';
+            
+            for (let i = 0; i < input.length; i++) {
+                const char = input[i];
+                if (charToBinary[char]) {
+                    output += charToBinary[char] + ' ';
+                } else {
+                    output += '[?] ';
+                }
+            }
+            
+            document.getElementById('converterResult').textContent = output.trim();
+        }
+
+        function binaryToText() {
+            const input = document.getElementById('inputText').value;
+            // Split while preserving original spacing
+            const binaryArray = input.split(/(\s+)/).filter(b => b.trim().length > 0);
+            let output = '';
+            
+            for (const binary of binaryArray) {
+                if (binary.trim().length === 0) {
+                    output += binary; // preserve original spacing
+                } else if (binaryToChar[binary]) {
+                    output += binaryToChar[binary];
+                } else if (/^[01]{8}$/.test(binary)) {
+                    output += binaryToChar[binary] || '[?]';
+                } else {
+                    output += '[无效]';
+                }
+            }
+            
+            document.getElementById('converterResult').textContent = output;
+        }
+
+        // Utility functions
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('converterResult').textContent = '';
+        }
+
+        function sendToDecrypt() {
+            const result = document.getElementById('encryptResult').textContent;
+            document.getElementById('ciphertext').value = result;
+            switchTab('decrypt');
+        }
+
+        function sendToEncrypt() {
+            const result = document.getElementById('converterResult').textContent;
+            document.getElementById('plaintext').value = result;
+            switchTab('encrypt');
+        }
+
+        function sendToConverter() {
+            const result = document.getElementById('decryptResult').textContent;
+            document.getElementById('inputText').value = result;
+            switchTab('converter');
+        }
+    </script>
+</body>
+</html>
